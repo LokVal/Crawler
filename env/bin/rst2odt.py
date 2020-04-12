@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/amazon-crawler/env/bin/python3
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 
 # $Id: rst2odt.py 5839 2009-01-07 19:09:28Z dkuhlman $
 # Author: Dave Kuhlman <dkuhlman@rexx.com>

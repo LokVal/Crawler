@@ -11,7 +11,7 @@ from .detail_parser import DetailParser
 
 django.setup()
 
-from .models import Product, CrawlingTask, TaskRun
+from .models import Product, CrawlingTask
 
 # set the default Django settings module for the 'celery' program.
 

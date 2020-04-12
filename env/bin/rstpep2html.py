@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/amazon-crawler/env/bin/python3
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 
 # $Id: rstpep2html.py 4564 2006-05-21 20:44:42Z wiemann $
 # Author: David Goodger <goodger@python.org>

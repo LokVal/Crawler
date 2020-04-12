@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python3.8
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

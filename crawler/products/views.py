@@ -4,11 +4,8 @@ from django.shortcuts import render
 from rest_framework import mixins, viewsets
 from rest_framework.response import Response
 
-from crawler.products.detail_parser import DetailParser
 import re
 from dataclasses import dataclass
-
-from crawler.products.models import Product, CrawlingTask
 
 
 # class ProductViewSet(mixins.RetrieveModelMixin,

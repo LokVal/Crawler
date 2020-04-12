@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/amazon-crawler/env/bin/python3
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 
 import sys
 import json

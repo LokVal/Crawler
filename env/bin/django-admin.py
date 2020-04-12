@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/amazon-crawler/env/bin/python3
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 from django.core import management
 
 if __name__ == "__main__":

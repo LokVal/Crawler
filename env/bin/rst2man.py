@@ -1,4 +1,4 @@
-#!/Users/dok/PycharmProjects/amazon-crawler/env/bin/python3
+#!/Users/dok/PycharmProjects/AmazonCrawler/env/bin/python
 
 # Author: 
 # Contact: grubert@users.sf.net
