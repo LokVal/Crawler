@@ -24,7 +24,6 @@ class Manufacturer(models.Model):
         app_label = 'products'
 
 
-
 class ProductBrand(models.Model):
     id = get_id_field()
     create_date = models.DateTimeField()

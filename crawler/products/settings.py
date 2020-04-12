@@ -34,7 +34,7 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
-django.setup()
+# django.setup()
 # settings.configure()
 
 INSTALLED_APPS = [
@@ -134,9 +134,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {
-    'debug_task': {
-        'task': 'products.celery.debug_task',
-        'schedule': 15,
+    'parse_pages': {
+        'task': 'products.celery.parse_pages',
+        'schedule': 3600,  # seconds in hour
         'args': None
     },
 }
