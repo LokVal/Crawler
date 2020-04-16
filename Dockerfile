@@ -1,15 +1,17 @@
-FROM python:3.8
-ENV PYTHONUNBUFFERED 1
+FROM python:3-alpine
 
-# Allows docker to cache installed dependencies between builds
-COPY ./requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+# Install dependencies required for psycopg2 python package
+RUN apk update && apk add libpq
+RUN apk update && apk add --virtual .build-deps gcc python3-dev musl-dev postgresql-dev
 
-# Adds our application code to the image
-COPY . code
-WORKDIR code
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+COPY . .
+RUN export DJANGO_SETTINGS_MODULE=Crawler.settings
+RUN source venv/bin/activate
+RUN venv/bin/pip3 install --no-cache-dir -r requirements.txt
+
 
 EXPOSE 8000
 
-# Run the production server
-CMD newrelic-admin run-program gunicorn --bind 0.0.0.0:$PORT --access-logfile - crawler.wsgi:application
+CMD ["gunicorn", "Crawler.wsgi", "0:8000"]

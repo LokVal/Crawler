@@ -1,29 +1,47 @@
-version: '2'
+version: '3.4'
 
 services:
-  postgres:
-    image: postgres:11.6
-  web:
-    restart: always
-    environment:
-      - DJANGO_SECRET_KEY=local
-    image: web
-    build: ./
-    command: >
-      bash -c "python wait_for_postgres.py &&
-               ./manage.py migrate &&
-               ./manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - ./:/code
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-  documentation:
-    restart: always
-    build: ./
-    command: "mkdocs serve"
-    volumes:
-      - ./:/code
-    ports:
-      - "8001:8001"
+
+  app:
+    build: .
+    command: sh -c "python manage.py migrate && gunicorn Crawler.wsgi -b 0.0.0.0:8000"
+    container_name: app
+    expose:
+      - "8000"
+    hostname: app
+    image: app-image
+    networks:
+      - main
+    restart: on-failure
+
+  celery_worker:
+    command: sh -c "celery -A product_parser worker -l info"
+    container_name: celery_worker
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+    hostname: celery_worker
+    image: app-image
+    networks:
+      - main
+    restart: on-failure
+
+  celery_beat:
+    command: sh -c "celery -A product_parser beat -l info"
+    container_name: celery_beat
+    hostname: celery_beat
+    image: app-image
+    networks:
+      - main
+    restart: on-failure
+
+networks:
+  main:
