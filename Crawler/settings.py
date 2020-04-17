@@ -134,7 +134,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {
     'parse_pages': {
         'task': 'product_parser.celery.parse_pages',
-        'schedule': 10800,  # seconds in hour
+        'schedule': 10800,  # seconds in 3 hours
         'args': None
     },
 }

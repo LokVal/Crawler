@@ -65,7 +65,7 @@ class Product(models.Model):
 
     asin = models.CharField(max_length=20, null=True)
     model_number = models.CharField(max_length=50, null=True)
-    url = models.CharField(max_length=1024, unique=True)
+    url = models.CharField(max_length=1024)
     product_title = models.CharField(max_length=100)
     price = models.FloatField(null=True)
     bsr = models.FloatField(null=True)
