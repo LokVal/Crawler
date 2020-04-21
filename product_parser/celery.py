@@ -11,7 +11,7 @@ from .detail_parser import DetailParser
 
 django.setup()
 
-from .models import Product, CrawlingTask
+from .models import Product, CrawlingTask, ProductPage
 
 # set the default Django settings module for the 'celery' program.
 
@@ -30,9 +30,10 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 
-def parse(headers, url) -> Product:
+def parse(headers, url) -> (Product, ProductPage):
     resp = requests.get(url, headers=headers)
-    parser = DetailParser(str(resp.content))
+    content = str(resp.content);
+    parser = DetailParser(content)
     detail = parser.parse()
     product_title = detail.get('title')
     product_reviews_number = detail.get('reviews')
@@ -72,12 +73,15 @@ def parse(headers, url) -> Product:
             numbers = get_number(value)
             product.bsr = get_first_float(numbers)
 
-    return product
+    content = ProductPage(page_html=content)
+
+    return product, content
 
 
 @app.task()
 def parse_pages():
-    print('hello')
+    print("'parse_pages' task has ran")
+
     headers = {
         'authority': 'www.amazon.com',
         'cache-control': 'max-age=0',
@@ -94,10 +98,9 @@ def parse_pages():
     }
 
     for task in CrawlingTask.objects.all():
-        print(task)
-        product = parse(headers, task.url)
-        print(product)
+        product, content = parse(headers, task.url)
         existing_product = Product.objects.filter(asin=product.asin).first()
+        
         if existing_product:
             existing_product.product_title = product.product_title
             existing_product.url = product.url
@@ -108,6 +111,10 @@ def parse_pages():
             existing_product.dim_x, existing_product.dim_y, existing_product.dim_z = product.dim_x, product.dim_y, product.dim_z
             existing_product.model_number = product.model_number
             existing_product.bsr = product.bsr
+            product = existing_product
+        content.product = product
         product.save()
+        content.save()
+
 
     # url = 'https://www.amazon.com/nuLOOM-HJZOM1B-Tufted-Classie-Multi/dp/B00AW0TX10/ref=sr_1_6?dchild=1&pf_rd_i=684541011&pf_rd_m=ATVPDKIKX0DER&pf_rd_p=00b00417-8753-4d7d-a195-6b32e72824d6&pf_rd_r=841BSQVSD4HS6DVDYN9B&pf_rd_s=merchandised-search-2&pf_rd_t=101&qid=1586618338&refinements=p_28%3Ashag&s=home-garden&sr=1-6'

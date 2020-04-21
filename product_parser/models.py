@@ -13,6 +13,10 @@ def get_id_field():
     return models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
 
+def get_datetime_field():
+    return models.DateTimeField(default=datetime.now, null=True)
+
+
 class User(AbstractUser):
     id = get_id_field()
 
@@ -48,8 +52,8 @@ class Manufacturer(models.Model):
 
 class ProductBrand(models.Model):
     id = get_id_field()
-    create_date = models.DateTimeField()
-    mod_date = models.DateTimeField(null=True)
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
 
     name = models.CharField(max_length=50, unique=True)
     manufacturer_id = models.ForeignKey(Manufacturer, on_delete=models.SET_NULL, null=True)
@@ -60,8 +64,8 @@ class ProductBrand(models.Model):
 
 class Product(models.Model):
     id = get_id_field()
-    create_date = models.DateTimeField(default=datetime.now)
-    mod_date = models.DateTimeField(null=True)
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
 
     asin = models.CharField(max_length=20, null=True)
     model_number = models.CharField(max_length=50, null=True)
@@ -83,10 +87,18 @@ class Product(models.Model):
     #     app_label = 'products'
 
 
+class ProductPage(models.Model):
+    id = get_id_field()
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    page_html = models.TextField()
+
+
 class ProductAudit(models.Model):
     id = get_id_field()
-    create_date = models.DateTimeField()
-    mod_date = models.DateTimeField(null=True)
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
 
     property_name = models.CharField(max_length=30)
     type = models.CharField(max_length=30)
@@ -99,8 +111,8 @@ class ProductAudit(models.Model):
 
 class CrawlingTask(models.Model):
     id = get_id_field()
-    create_date = models.DateTimeField()
-    mod_date = models.DateTimeField(null=True)
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
 
     asin = models.CharField(max_length=20, null=True)
     url = models.CharField(max_length=256, null=True)
@@ -112,8 +124,8 @@ class CrawlingTask(models.Model):
 
 class TaskRun(models.Model):
     id = get_id_field()
-    create_date = models.DateTimeField()
-    mod_date = models.DateTimeField(null=True)
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
 
     product_id = models.ForeignKey(Product, null=True, on_delete=models.SET_NULL)
 
