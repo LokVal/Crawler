@@ -1,11 +1,45 @@
 import json
 import re
+from typing import List, Final
 
 from parsel import Selector
+from bs4 import BeautifulSoup
+from requests import get, Response
+
+IMAGE_CSS_SELECTOR: Final = 'ul.a-unordered-list.a-nostyle.a-horizontal.list.maintain-height > li > .a-list-item > span > div > img'
 
 
-class DetailParser(object):
+class AmazonParser:
+    _text: str
+    _parser: BeautifulSoup
+
+    @property
+    def parser(self) -> BeautifulSoup:
+        if self._parser is not None:
+            assert self._text is not None
+            self._parser = BeautifulSoup(self._text, 'html.parser')
+        return self._parser
+
+    def __init__(self, text: str):
+        self._text = text
+
+    def get_image_responses(self) -> List:
+        responses = []
+        for image_element in self.parser.select(IMAGE_CSS_SELECTOR):
+            url = image_element['src']
+            if not url:
+                continue
+
+            response = get(url, stream=True)
+            if response.status_code is 200:
+                responses.append((url, response))
+
+        return responses
+
+
+class DetailParser(AmazonParser):
     def __init__(self, text, type='html', namespaces=None, root=None, base_url=None):
+        super().__init__(text)
         self.selector = Selector(
             text, type=type, namespaces=namespaces, root=root, base_url=base_url)
         self.html_parser = None  # HTMLParser()
@@ -260,6 +294,7 @@ class DetailParser(object):
                 rank = 0
 
         return rank
+
 
 class OfferListingParser(object):
     def __init__(self, text, type='html', namespaces=None, root=None, base_url=None):

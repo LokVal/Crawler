@@ -95,6 +95,16 @@ class ProductPage(models.Model):
     page_html = models.TextField()
 
 
+class ProductImage(models.Model):
+    id = get_id_field()
+    create_date = get_datetime_field()
+    mod_date = get_datetime_field()
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    name = models.CharField(max_length=256)
+    hash = models.CharField(max_length=100)
+    file = models.FileField(blank=True, upload_to='product_image')
+
+
 class ProductAudit(models.Model):
     id = get_id_field()
     create_date = get_datetime_field()

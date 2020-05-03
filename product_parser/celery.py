@@ -2,8 +2,11 @@ from __future__ import absolute_import, unicode_literals
 import os
 import re
 from typing import List
-
+from hashlib import md5
 import django
+from django.db.models import Q
+from django.core.files import File
+from django.core.files.temp import NamedTemporaryFile
 import requests
 from celery import Celery
 
@@ -11,7 +14,7 @@ from .detail_parser import DetailParser
 
 django.setup()
 
-from .models import Product, CrawlingTask, ProductPage
+from .models import Product, CrawlingTask, ProductPage, ProductImage
 
 # set the default Django settings module for the 'celery' program.
 
@@ -32,7 +35,7 @@ app.autodiscover_tasks()
 
 def parse(headers, url) -> (Product, ProductPage):
     resp = requests.get(url, headers=headers)
-    content = str(resp.content);
+    content = str(resp.content)
     parser = DetailParser(content)
     detail = parser.parse()
     product_title = detail.get('title')
@@ -75,7 +78,32 @@ def parse(headers, url) -> (Product, ProductPage):
 
     content = ProductPage(page_html=content)
 
-    return product, content
+    images = []
+    try:
+        image_responses = parser.get_image_responses()
+        for url, response in image_responses:
+            hash_sum = md5()
+            image_temp_file = NamedTemporaryFile(delete=True)
+            for chunk in response.iter_content(1024):
+                if not chunk:
+                    break
+                hash_sum.update(chunk)
+                image_temp_file.write(chunk)
+            dig = hash_sum.hexdigest()
+            image_temp_file.flush()
+            filename = f'{product.asin}_{dig}'
+            temp_file = File(image_temp_file, name=filename)
+            image = ProductImage(
+                name=filename,
+                hash=dig,
+                product=product,
+            )
+            image.file.save(filename, temp_file)
+            images.append(image)
+    except:
+        pass
+
+    return product, content, images
 
 
 @app.task()
@@ -98,7 +126,7 @@ def parse_pages():
     }
 
     for task in CrawlingTask.objects.all():
-        product, content = parse(headers, task.url)
+        product, content, images = parse(headers, task.url)
         existing_product = Product.objects.filter(asin=product.asin).first()
         
         if existing_product:
@@ -112,9 +140,17 @@ def parse_pages():
             existing_product.model_number = product.model_number
             existing_product.bsr = product.bsr
             product = existing_product
+            images_for_existing_product = ProductImage.objects.filter(product__id=existing_product.id)
+            new_images = []
+            for image in images:
+                if all(image.hash != existing_image for existing_image in images_for_existing_product):
+                    new_images.append(image)
+            images = new_images
+
         content.product = product
         product.save()
         content.save()
+        ProductImage.objects.bulk_create(images)
 
 
     # url = 'https://www.amazon.com/nuLOOM-HJZOM1B-Tufted-Classie-Multi/dp/B00AW0TX10/ref=sr_1_6?dchild=1&pf_rd_i=684541011&pf_rd_m=ATVPDKIKX0DER&pf_rd_p=00b00417-8753-4d7d-a195-6b32e72824d6&pf_rd_r=841BSQVSD4HS6DVDYN9B&pf_rd_s=merchandised-search-2&pf_rd_t=101&qid=1586618338&refinements=p_28%3Ashag&s=home-garden&sr=1-6'
