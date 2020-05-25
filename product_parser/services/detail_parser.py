@@ -1,15 +1,21 @@
 import json
 import re
-from typing import List, Final
+from _md5 import md5
+from typing import List, Final, Dict
 
+import requests
+from django.core.files import File
+from django.core.files.temp import NamedTemporaryFile
 from parsel import Selector
 from bs4 import BeautifulSoup
 from requests import get, Response
 
+from product_parser.models import Product, ProductPage, ProductImage
+
 IMAGE_CSS_SELECTOR: Final = 'ul.a-unordered-list.a-nostyle.a-horizontal.list.maintain-height > li > .a-list-item > span > div > img'
 
 
-class AmazonParser:
+class Parser:
     _text: str
     _parser: BeautifulSoup
 
@@ -31,13 +37,13 @@ class AmazonParser:
                 continue
 
             response = get(url, stream=True)
-            if response.status_code is 200:
+            if response.status_code == 200:
                 responses.append((url, response))
 
         return responses
 
 
-class DetailParser(AmazonParser):
+class DetailParser(Parser):
     def __init__(self, text, type='html', namespaces=None, root=None, base_url=None):
         super().__init__(text)
         self.selector = Selector(
@@ -503,3 +509,94 @@ class OfferListingParser(object):
     def parse_offer_listing_id(self, offer_elem):
         return offer_elem.xpath(
             './div[contains(@class, "olpBuyColumn")]//form/input[@name="offeringID.1"]/@value').get()
+
+
+class AmazonParser:
+    _headers: Dict
+
+    def __init__(self, headers: Dict):
+        self._headers = headers
+
+    def get_detail_info(self, url: str) -> (Product, ProductPage):
+        content = self._get_content(url)
+        parser = DetailParser(content)
+
+        product = self._parse_product(parser, url)
+        content = ProductPage(page_html=content)
+        images = self._parse_images(parser, product)
+
+        return product, content, images
+
+    def _get_content(self, url: str) -> str:
+        resp = requests.get(url, headers=self._headers)
+        return str(resp.content)
+
+    def _parse_product(self, parser: DetailParser, url: str):
+        detail = parser.parse()
+        product_title = detail.get('title')
+        product_reviews_number = detail.get('reviews')
+        price_elements = parser.selector.css('#priceblock_saleprice') or parser.selector.css('.offer-price')
+        product_price = None
+        if len(price_elements) > 0:
+            product_price = price_elements[0].root.text
+
+        product = Product(
+            product_title=product_title.strip().replace('\n', '').replace('\\n', '').replace('  ', ''),
+            url=url,
+            price=float(product_price.replace('$', '')),
+            rating_amount=float(product_reviews_number or 0)
+        )
+
+        for key, value in detail['details'].items():
+            if 'Shipping Weight' in key:
+                numbers = self._get_number(value)
+                product.shipping_weight = self._get_first_float(numbers)
+            elif 'Weight' in key:
+                numbers = self._get_number(value)
+                product.weight = self._get_first_float(numbers)
+            elif 'Dimensions' in key:
+                numbers = self._get_number(value)
+                product.dim_x, product.dim_y, product.dim_z = numbers
+            elif 'model number' in key:
+                product.model_number = value.replace('  ', '').replace('\n', '').replace('\\n', '')
+            elif 'ASIN' in key:
+                product.asin = value.replace('  ', '').replace('\n', '').replace('\\n', '')
+            elif 'Best Sellers Rank' in key:
+                numbers = self._get_number(value)
+                product.bsr = self._get_first_float(numbers)
+
+        return product
+
+    def _parse_images(self, parser: DetailParser, product: Product) -> List:
+        try:
+            image_responses = parser.get_image_responses()
+            for url, response in image_responses:
+                hash_sum = md5()
+                image_temp_file = NamedTemporaryFile(delete=True)
+                for chunk in response.iter_content(1024):
+                    if not chunk:
+                        break
+                    hash_sum.update(chunk)
+                    image_temp_file.write(chunk)
+                dig = hash_sum.hexdigest()
+                image_temp_file.flush()
+                filename = f'{product.asin}_{dig}'
+                temp_file = File(image_temp_file, name=filename)
+                image = ProductImage(
+                    name=filename,
+                    hash=dig,
+                    product=product,
+                )
+                image.file.save(filename, temp_file)
+                yield image
+        except:
+            pass
+
+    def _get_number(self, str_with_num: str) -> List[float]:
+        return [
+            item[1] if item[1] else item[0]
+            for item in re.findall('(\d+\.\d+)|(\d+)', str_with_num)
+        ]
+
+    def _get_first_float(self, numbers: List[float]) -> float:
+        return float(str(numbers[0])) if len(numbers) else None

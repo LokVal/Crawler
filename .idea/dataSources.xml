@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="@localhost" uuid="a917fafe-f581-4372-a2fc-a5a107529c3f">
-      <driver-ref>postgresql</driver-ref>
+    <data-source source="LOCAL" name="Microsoft SQL Server - AmazonFinance@80.251.54.80" uuid="575c7bc7-7a11-4a35-a96a-48a24be43e27">
+      <driver-ref>sqlserver.ms</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/</jdbc-url>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:sqlserver://80.251.54.80:9138;database=AmazonFinance</jdbc-url>
     </data-source>
   </component>
 </project>

@@ -84,7 +84,21 @@ WSGI_APPLICATION = 'Crawler.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default='postgres://postgres:docker@localhost:5432/crawler'
-    )
+    ),
+    'amazon_finance': {
+        'ENGINE': 'sql_server.pyodbc',
+        'NAME': 'AmazonFinance',
+        'USER': 'analyst',
+        'PASSWORD': '<MBhg765#^_J',
+        'HOST': '80.251.54.80',
+        'PORT': '9138',
+        # 'OPTIONS': {
+        #     'driver': 'ODBC Driver 17 for SQL Server',
+        # },
+    },
+    # 'amazon_finance': dj_database_url.config(
+    #     default='sqlserver://analyst:<MBhg765#^_J@80.251.54.80:9138/AmazonFinance'
+    # ),
 }
 
 # Password validation
@@ -133,7 +147,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {
     'parse_pages': {
-        'task': 'product_parser.celery.parse_pages',
+        'task': 'product_parser.celeryapp.parse_pages',
         'schedule': 300000,
         'args': None
     },
